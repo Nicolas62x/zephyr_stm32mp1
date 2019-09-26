@@ -322,6 +322,14 @@
 			clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00000001>;
 			status = "disabled";
 		};
+
+		i2c_rpmsg: i2c_rpmsg@0{
+			compatible = "rpmsg-i2c";
+			reg = <0x0 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 };
 

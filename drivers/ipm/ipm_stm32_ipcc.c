@@ -300,7 +300,7 @@ DEVICE_DT_INST_DEFINE(0,
 		    &stm32_ipcc_mailbox_init,
 		    NULL,
 		    &stm32_IPCC_data, &stm32_ipcc_mailbox_0_config,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,
 		    &stm32_ipcc_mailbox_driver_api);
 
 static void stm32_ipcc_mailbox_config_func(const struct device *dev)

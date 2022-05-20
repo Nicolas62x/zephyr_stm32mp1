@@ -21,6 +21,10 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+# Arnaud's temporary hack for test
+    - name: arnopo
+      url-base: https://github.com/arnopo/
+# end Arnaud's temporary hack for test
 
   #
   # Please add items below based on alphabetical order
@@ -146,9 +150,13 @@ manifest:
       path: modules/hal/xtensa
       groups:
         - hal
-    - name: libmetal
-      revision: 850a3c3fd5bc655987021dc9106d8e8cd0f7e061
+# Arnaud's temporary hack for test
+    - name: libmetal-zephyr
+      remote: arnopo
+# End Arnaud's temporary hack for test
+      revision: a706c28cb38b14069ef08ce99651530812914dc9
       path: modules/hal/libmetal
+      submodules: true
       groups:
         - hal
     - name: liblc3codec
@@ -192,8 +200,12 @@ manifest:
     - name: nrf_hw_models
       revision: b8cea37dbdc8fc58cc14b4e19fa850877a9da520
       path: modules/bsim_hw_models/nrf_hw_models
-    - name: open-amp
-      revision: 8d53544871e1f300c478224faca6be8384ab0d04
+# Arnaud's temporary hack for test
+    - name: open-amp-zephyr
+      remote: arnopo
+# End Arnaud's temporary hack for test
+      revision: 797f673f4a980e73678403b8dcb92be7611f831d
+      submodules: true
       path: modules/lib/open-amp
     - name: openthread
       revision: e2a765599aa0379d0f72f0149a9cbafec070c12d

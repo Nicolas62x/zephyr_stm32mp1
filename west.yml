@@ -21,6 +21,8 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: openamp
+      url-base: https://github.com/OpenAMP/
 
   #
   # Please add items below based on alphabetical order
@@ -147,7 +149,8 @@ manifest:
       groups:
         - hal
     - name: libmetal
-      revision: 850a3c3fd5bc655987021dc9106d8e8cd0f7e061
+      remote: openamp
+      revision: main
       path: modules/hal/libmetal
       groups:
         - hal

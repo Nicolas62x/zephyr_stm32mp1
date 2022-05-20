@@ -16,7 +16,6 @@ source "modules/Kconfig.eos_s3"
 source "modules/Kconfig.esp32"
 source "modules/Kconfig.imx"
 source "modules/Kconfig.infineon"
-source "modules/Kconfig.libmetal"
 source "modules/Kconfig.lvgl"
 source "modules/Kconfig.mcux"
 source "modules/Kconfig.microchip"
@@ -84,6 +83,9 @@ comment "FFF module not available."
 
 comment "zcbor module not available."
 	depends on !ZEPHYR_ZCBOR_MODULE
+
+comment "libmetal module not available."
+	depends on !ZEPHYR_LIBMETAL_MODULE
 
 comment "CHRE module not available."
 	depends on !ZEPHYR_CHRE_MODULE

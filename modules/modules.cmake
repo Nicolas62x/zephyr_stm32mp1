@@ -16,6 +16,6 @@ foreach(module ${kconfig_modules})
   get_filename_component(module_dir  ${module} DIRECTORY)
   get_filename_component(module_name ${module_dir} NAME)
   zephyr_string(SANITIZE TOUPPER MODULE_NAME_UPPER ${module_name})
-
   set(ZEPHYR_${MODULE_NAME_UPPER}_KCONFIG ${module_dir}/Kconfig)
+  message(STATUS "${MODULE_NAME_UPPER} : ${ZEPHYR_${MODULE_NAME_UPPER}_KCONFIG}")
 endforeach()

@@ -41,6 +41,8 @@ endif()
 
 if(ZEPHYR_MODULES)
   set(ZEPHYR_MODULES_ARG "--modules" ${ZEPHYR_MODULES})
+  message(STATUS "zephyr modules: ${ZEPHYR_MODULES}")
+
 endif()
 
 if(ZEPHYR_EXTRA_MODULES)
@@ -55,6 +57,7 @@ if(WEST)
   set(WEST_ARG "--zephyr-base" ${ZEPHYR_BASE})
 endif()
 
+message(STATUS "ZEPHYR_MODULES_ARG: ${ZEPHYR_MODULES_ARG}")
 if(WEST OR ZEPHYR_MODULES)
   # Zephyr module uses west, so only call it if west is installed or
   # ZEPHYR_MODULES was provided as argument to CMake.

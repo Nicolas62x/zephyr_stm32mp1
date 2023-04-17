@@ -508,42 +508,50 @@ void app_task(void *arg1, void *arg2, void *arg3)
 		/* Display sensor data */
 
 		/* Erase previous */
-		if (display_available)
+		if (display_available) {
 			cfb_print(dev_display, "Zephyr", 0,
 				  line++ * display_font_height);
 
-		if (hts221_available) {
-			/* temperature */
-			snprintf(display_buf, sizeof(display_buf), "T: %1f C",
-				 sensor_value_to_double(&temp1));
-			if (display_available)
+			if (hts221_available) {
+				/* temperature */
+				snprintf(display_buf, sizeof(display_buf), "T: %d.%1d*C",
+					(int)sensor_value_to_double(&temp1),
+					(int)(sensor_value_to_double(&temp1) * 10) % 10);
+
 				cfb_print(dev_display, display_buf, 0,
 					  line++ * display_font_height);
 
-			/* humidity */
-			snprintf(display_buf, sizeof(display_buf), "H: %1f%%",
-				 sensor_value_to_double(&hum));
-			if (display_available)
+				/* humidity */
+				snprintf(display_buf, sizeof(display_buf), "H: %d.%1d%%",
+					 (int)sensor_value_to_double(&hum),
+					 (int)(sensor_value_to_double(&hum) * 10) % 10);
+
 				cfb_print(dev_display, display_buf, 0,
 					  line++ * display_font_height);
-		}
+			} else {
+				cfb_print(dev_display, "T: N/A", 0, line++ * display_font_height);
+				cfb_print(dev_display, "H: N/A", 0, line++ * display_font_height);
+			}
 
-		if (lps22hb_available) {
-			/* pressure */
-			/* lps22hb temperature */
-			len = snprintf(message, sizeof(message),
-				       "LPS22HB: Temperature: %.1f C\n",
-				       sensor_value_to_double(&temp2));
+			if (lps22hb_available) {
+				/* pressure */
+				/* lps22hb temperature */
+				len = snprintf(message, sizeof(message),
+						"LPS22HB: Temperature: %.1f C\n",
+						sensor_value_to_double(&temp2));
 
-			snprintf(display_buf, sizeof(display_buf), "P: %3f kpa",
-				 sensor_value_to_double(&press) * 10.0);
-			if (display_available)
+				snprintf(display_buf, sizeof(display_buf), "P: %d.%02dkpa",
+					(int)(sensor_value_to_double(&press) * 10.0),
+					(int)(sensor_value_to_double(&press) * 1000) % 100);
+
 				cfb_print(dev_display, display_buf, 0,
 					  line++ * display_font_height);
-		}
+			} else {
+				cfb_print(dev_display, "P: N/A", 0, line++ * display_font_height);
+			}
 
-		if (display_available)
 			cfb_framebuffer_finalize(dev_display);
+		}
 
 		receive_message(&msg, &len);
 	}

@@ -6,3 +6,4 @@
 
 zephyr_include_directories_ifdef(CONFIG_OPENAMP_RSC_TABLE .)
 zephyr_sources_ifdef(CONFIG_OPENAMP_RSC_TABLE resource_table.c)
+zephyr_sources_ifdef(CONFIG_OPENAMP_RSC_TABLE mmio_table.c)

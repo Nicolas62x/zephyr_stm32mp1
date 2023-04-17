@@ -175,15 +175,12 @@ static void platform_ipm_callback(const struct device *dev,
 
 static void receive_message(unsigned char **msg, unsigned int *len)
 {
-	unsigned int i = 1000;
+	uint32_t t0 = k_uptime_get_32();
 
-	while (i) {
-		if (k_sem_take(&data_sem, K_NO_WAIT) == 0) {
+	while (k_uptime_get_32() - t0 < 250) {
+
+		if (k_sem_take(&data_sem, K_MSEC(1)) == 0)
 			rproc_virtio_notified(rvdev.vdev, VRING1_ID);
-		} else {
-			k_sleep(K_MSEC(1));
-			i--;
-		}
 	}
 }
 

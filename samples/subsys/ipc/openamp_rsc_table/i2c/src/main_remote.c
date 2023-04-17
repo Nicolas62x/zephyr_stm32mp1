@@ -17,6 +17,7 @@
 #include <openamp/open_amp.h>
 #include <metal/device.h>
 #include <resource_table.h>
+#include <mmio_table.h>
 
 /* Display / Framebuffer */
 #include <zephyr/display/cfb.h>
@@ -94,6 +95,61 @@ static K_SEM_DEFINE(data_sem, 0, 1);
 
 #define TEST_DATA_SIZE	20
 
+/**** MMIO ****/
+
+/* This marks a buffer as continuing via the next field. */
+#define VIRTQ_DESC_F_NEXT	0
+/* This marks a buffer as device write-only (otherwise device read-only). */
+#define VIRTQ_DESC_F_WRITE	1
+
+#define BitSet(BIT, VALUE) (VALUE & (1 << BIT))
+
+uint64_t features = 1 | ((uint64_t)1 << 32) | ((uint64_t)1 << 33);
+uint64_t driver_features;
+
+K_SEM_DEFINE(my_sem, 0, 1);
+
+void mmio_interrupt(void)
+{
+	static struct fw_mmio_table *mmio;
+	static uint32_t last_status;
+
+	if (!mmio)
+		mmio_table_get(&mmio);
+
+	if (last_status != mmio->status) {
+		printf("MMIO status: %d\n", mmio->status);
+		last_status = mmio->status;
+	}
+
+	if (mmio->status == 0) {
+		driver_features = 0;
+		mmio->queueReady = 0;
+	} else if (mmio->status == 3) {
+		mmio->deviceFeatures = (uint32_t)(features >> (mmio->deviceFeaturesSel * 32));
+		driver_features |=
+			((uint64_t)mmio->driverFeatures << (mmio->driverFeaturesSel * 32));
+	} else if (mmio->status == 11) {
+		if (driver_features != features) {
+			printf("DriverFeatures does not match our features :(\n");
+			mmio->status &= ~(uint32_t)8;
+			return;
+		}
+
+		mmio->queueNumMax = 16;
+
+		if (!device_is_ready(i2c_dev)) {
+			printf("I2C device is not ready\n");
+			return;
+		}
+	} else if (mmio->status == 15) {
+		k_sem_give(&my_sem);
+	}
+}
+
+
+/**** ENDMMIO ****/
+
 void stop_display(void)
 {
 	display_blanking_on(dev_display);
@@ -105,6 +161,11 @@ static void platform_ipm_callback(const struct device *dev,
 	if (id == 2) {
 		/* receive shutdown */
 		stop_display();
+		return;
+	}
+
+	if (id == 5) {
+		mmio_interrupt();
 		return;
 	}
 

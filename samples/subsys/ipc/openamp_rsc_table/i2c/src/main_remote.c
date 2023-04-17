@@ -35,7 +35,9 @@ LOG_MODULE_REGISTER(openamp_rsc_table, LOG_LEVEL_DBG);
 
 #define APP_TASK_STACK_SIZE (4096)
 K_THREAD_STACK_DEFINE(thread_stack, APP_TASK_STACK_SIZE);
+K_THREAD_STACK_DEFINE(thread_stack2, APP_TASK_STACK_SIZE);
 static struct k_thread thread_data;
+static struct k_thread thread_data2;
 
 static const struct device *const ipm_handle =
 	DEVICE_DT_GET(DT_CHOSEN(zephyr_ipc));
@@ -109,6 +111,12 @@ uint64_t driver_features;
 
 K_SEM_DEFINE(my_sem, 0, 1);
 
+struct virtio_i2c_out_hdr {
+	uint16_t addr;
+	uint16_t padding;
+	uint32_t flags;
+};
+
 void mmio_interrupt(void)
 {
 	static struct fw_mmio_table *mmio;
@@ -147,6 +155,100 @@ void mmio_interrupt(void)
 	}
 }
 
+void mmio_task(void *u1, void *u2, void *u3)
+{
+	static struct fw_mmio_table *mmio;
+
+	mmio_table_get(&mmio);
+
+init:
+
+	k_sem_take(&my_sem, K_FOREVER);
+
+	volatile struct virtq_desc *descs = (volatile struct virtq_desc *)mmio->queueDesc;
+	volatile struct virtq_avail *avails = (volatile struct virtq_avail *)mmio->queueDriver;
+	volatile struct virtq_used *useds = (volatile struct virtq_used *)mmio->queueDevice;
+
+	while (true) {
+		if (mmio->status != 15)
+			goto init;
+
+		uint16_t used = 0;
+
+		while (avails->idx != (uint16_t)(useds->idx + used)) {
+			uint16_t currentIDX = (uint16_t)(useds->idx + used) % mmio->queueNum;
+			struct virtq_desc *headerDesc = &descs[avails->ring[currentIDX]];
+
+			if (!headerDesc->addr || BitSet(VIRTQ_DESC_F_WRITE, headerDesc->flags)
+				|| headerDesc->len != sizeof(struct virtio_i2c_out_hdr)
+				|| !BitSet(VIRTQ_DESC_F_NEXT, headerDesc->flags)) {
+				printf("Error, first buffer is not a valid i2c_out_hdr\n");
+				break;
+			}
+
+			struct virtio_i2c_out_hdr *header =
+				(struct virtio_i2c_out_hdr *)headerDesc->addr;
+
+			struct virtq_desc *secondDesc = &descs[headerDesc->next];
+			struct virtq_desc *lastDesc = BitSet(VIRTQ_DESC_F_NEXT, secondDesc->flags) ?
+											&descs[secondDesc->next] : NULL;
+
+			int lenWrited = 0, ret = 0;
+
+			volatile uint8_t *returnCode = lastDesc ? (uint8_t *)lastDesc->addr
+													: (uint8_t *)secondDesc->addr;
+
+			if (BitSet(1, header->flags)) {	/* read */
+				if (!lastDesc
+					|| !BitSet(VIRTQ_DESC_F_WRITE, secondDesc->flags)
+					|| !BitSet(VIRTQ_DESC_F_WRITE, lastDesc->flags)) {
+					printf("Error, read request with invalid buffer\n");
+					mmio->status = 4;
+					break;
+				}
+
+				/* TODO add read support */
+				*returnCode = 1;
+				lenWrited++;
+			} else {	/* write */
+
+				if (lastDesc) {
+					ret = i2c_write(i2c_dev, (uint8_t *)secondDesc->addr,
+							secondDesc->len, header->addr >> 1);
+
+					if (ret) {
+						printf("Failed to write i2c: %d (%d bytes) to addr: %d, buf is: %p\n",
+							ret, secondDesc->len, header->addr >> 1,
+							(uint8_t *)secondDesc->addr);
+						*returnCode = 1;
+					}
+
+					*returnCode = 0;
+					lenWrited++;
+				} else {
+					/* TODO add zero length write support */
+					*returnCode = 1;
+					lenWrited++;
+				}
+			}
+
+			useds->ring[currentIDX].id = avails->ring[currentIDX];
+			useds->ring[currentIDX].len = lenWrited;
+
+			used++;
+		}
+
+		if (used) {
+			useds->idx = (uint16_t)(useds->idx + used);
+
+			/* Used Buffer Notification */
+			mmio->interruptStatus = 1;
+			ipm_send(ipm_handle, 0, 4, NULL, 0);
+		}
+
+		k_sem_take(&my_sem, K_FOREVER);
+	}
+}
 
 /**** ENDMMIO ****/
 
@@ -654,6 +756,9 @@ void main(void)
 			(k_thread_entry_t)app_task,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
+	k_thread_create(&thread_data2, thread_stack2, APP_TASK_STACK_SIZE,
+			(k_thread_entry_t)mmio_task,
+			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 }
 
 SYS_INIT(openamp_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

@@ -147,7 +147,7 @@ void mmio_interrupt(void)
 		mmio->queueNumMax = 16;
 
 		if (!device_is_ready(i2c_dev)) {
-			printf("I2C device is not ready\n");
+			printf("Warn: I2C device is not ready\n");
 			return;
 		}
 	} else if (mmio->status == 15) {
@@ -183,6 +183,7 @@ init:
 				|| headerDesc->len != sizeof(struct virtio_i2c_out_hdr)
 				|| !BitSet(VIRTQ_DESC_F_NEXT, headerDesc->flags)) {
 				printf("Error, first buffer is not a valid i2c_out_hdr\n");
+				mmio->status |= 64;
 				break;
 			}
 
@@ -203,7 +204,7 @@ init:
 					|| !BitSet(VIRTQ_DESC_F_WRITE, secondDesc->flags)
 					|| !BitSet(VIRTQ_DESC_F_WRITE, lastDesc->flags)) {
 					printf("Error, read request with invalid buffer\n");
-					mmio->status = 4;
+					mmio->status |= 64;
 					break;
 				}
 

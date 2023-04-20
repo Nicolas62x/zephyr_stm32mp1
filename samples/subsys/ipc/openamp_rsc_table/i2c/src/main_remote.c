@@ -196,8 +196,7 @@ init:
 
 			int lenWrited = 0, ret = 0;
 
-			volatile uint8_t *returnCode = lastDesc ? (uint8_t *)lastDesc->addr
-													: (uint8_t *)secondDesc->addr;
+			uint8_t *returnCode;
 
 			if (BitSet(1, header->flags)) {	/* read */
 				if (!lastDesc
@@ -208,29 +207,39 @@ init:
 					break;
 				}
 
-				/* TODO add read support */
-				*returnCode = 1;
-				lenWrited++;
-			} else {	/* write */
+				returnCode = (uint8_t *)lastDesc->addr;
 
-				if (lastDesc) {
-					ret = i2c_write(i2c_dev, (uint8_t *)secondDesc->addr,
+				ret = i2c_read(i2c_dev, (uint8_t *)secondDesc->addr,
 							secondDesc->len, header->addr >> 1);
 
-					if (ret) {
-						printf("Failed to write i2c: %d (%d bytes) to addr: %d, buf is: %p\n",
-							ret, secondDesc->len, header->addr >> 1,
-							(uint8_t *)secondDesc->addr);
-						*returnCode = 1;
-					}
+				*returnCode = ret ? 1 : 0;
+				lenWrited = ret ? 1 : secondDesc->len + 1;
 
-					*returnCode = 0;
-					lenWrited++;
+			} else {	/* write */
+				if (lastDesc) {
+					if (BitSet(VIRTQ_DESC_F_WRITE, secondDesc->flags)
+						|| !BitSet(VIRTQ_DESC_F_WRITE, lastDesc->flags)) {
+						printf("Error, write request with invalid buffer\n");
+						mmio->status |= 64;
+						break;
+					}
+					returnCode = (uint8_t *)lastDesc->addr;
+
+					ret = i2c_write(i2c_dev, (uint8_t *)secondDesc->addr,
+							secondDesc->len, header->addr >> 1);
 				} else {
-					/* TODO add zero length write support */
-					*returnCode = 1;
-					lenWrited++;
+					if (!BitSet(VIRTQ_DESC_F_WRITE, secondDesc->flags)) {
+						printf("Error, zerolength write request with invalid buffer\n");
+						mmio->status |= 64;
+						break;
+					}
+					returnCode = (uint8_t *)secondDesc->addr;
+
+					ret = i2c_write(i2c_dev, NULL, 0, header->addr >> 1);
 				}
+
+				*returnCode = ret ? 1 : 0;
+				lenWrited = 1;
 			}
 
 			useds->ring[currentIDX].id = avails->ring[currentIDX];

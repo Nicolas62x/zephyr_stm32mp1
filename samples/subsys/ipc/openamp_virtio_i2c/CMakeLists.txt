@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13.1)
-# Copyright (c) 2019  STMicroelectronics
+# Copyright (c) 2023  STMicroelectronics
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -8,7 +8,7 @@ set(SHIELD x_nucleo_iks01a2)
 
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
 
-project(openamp_rsc_table_remote)
+project(openamp_virtio_i2c)
 
 zephyr_compile_definitions(
   -DMETAL_MAX_DEVICE_REGIONS=2

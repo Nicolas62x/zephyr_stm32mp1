@@ -26,7 +26,7 @@ Building the application
 *************************
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/ipc/openamp_rsc_table/i2c
+   :zephyr-app: samples/subsys/ipc/openamp_virtio_i2c
    :board: stm32mp157c_dk2
    :goals: debug
 

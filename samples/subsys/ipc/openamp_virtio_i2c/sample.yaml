@@ -1,0 +1,10 @@
+sample:
+    description: This app provides an example of how to integrate OpenAMP
+        with Zephyr and a virtio I2C bridge.
+    name: OpenAMP with virtio I2C bridge.
+tests:
+    sample.subsys.ipc.openamp_virtio_i2c:
+        build_only: true
+        platform_whitelist: stm32mp157c_dk2
+        tags: ipm
+        depends_on: arduino_i2c

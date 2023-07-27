@@ -368,6 +368,22 @@ typedef int (*i2c_target_read_processed_cb_t)(
  */
 typedef int (*i2c_target_stop_cb_t)(struct i2c_target_config *config);
 
+/** @brief Function called when a message need to be transferred
+ *
+ * This function is invoked by the controller when the bus is ready to
+ * provide a message from the address associated with the device device.
+ * After the function returns the controller shall enter a state where
+ * it is ready to react to new start conditions.
+ *
+ * @param config the configuration structure associated with the
+ * device to which the operation is addressed.
+ *
+ * @param msg the i2c message that should be processed
+ *
+ * @return Ignored.
+ */
+typedef int (*i2c_target_transfer_cb_t)(struct i2c_target_config *config, struct i2c_msg msg);
+
 /** @brief Structure providing callbacks to be implemented for devices
  * that supports the I2C target API.
  *
@@ -379,6 +395,7 @@ struct i2c_target_callbacks {
 	i2c_target_read_requested_cb_t read_requested;
 	i2c_target_write_received_cb_t write_received;
 	i2c_target_read_processed_cb_t read_processed;
+	i2c_target_transfer_cb_t transfer;
 	i2c_target_stop_cb_t stop;
 };
 

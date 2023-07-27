@@ -10,6 +10,14 @@
 	};
 };
 
+&virtio_mmio_dev {
+	status = "okay";
+};
+
+&i2c_virtio_dev {
+	status = "okay";
+};
+
 &arduino_i2c {
 	status = "okay";
 	ssd1306_zephyr:ssd1306@3c {
